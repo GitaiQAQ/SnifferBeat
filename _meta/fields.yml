@@ -2,8 +2,48 @@
   title: snifferbeat
   description:
   fields:
-    - name: msg
+    - name: version
+      type: int
+      required: true
+      description: >
+        Protocol Version
+    - name: frameType
+      type: int
+      required: true
+      description: >
+        Frame Type
+    - name: frameSubType
+      type: int
+      required: true
+      description: >
+        Frame Sub Type
+    - name: channel
+      type: int
+      required: true
+      description: >
+        Channel (0)
+    - name: rssi
+      type: int
+      required: true
+      description: >
+        Received Signal Strength Indicator
+    - name: chipId
       type: string
       required: true
       description: >
-        PLEASE UPDATE DOCUMENTATION
+        Chip ID as UUID
+    - name: receiverMAC
+      type: string
+      required: true
+      description: >
+        Reciver MAC
+    - name: senderMAC
+      type: string
+      required: true
+      description: >
+        Sender MAC without 00:00:00:00:00:00
+    - name: ssid
+      type: string
+      required: false
+      description: >
+        SSID - Wireless Network Name

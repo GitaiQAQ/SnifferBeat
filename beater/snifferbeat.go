@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 	"bufio"
+	"strings"
+	"strconv"
 
 	"github.com/gitaiqaq/serial"
 
@@ -17,19 +19,20 @@ import (
 
 type Snifferbeat struct {
 	done   chan struct{}
-	lines   chan string
+	frames   chan Frame
 	config config.Config
 	client publisher.Client
 }
 
-type WIFIFrame struct {
-	varsion 		int
+type Frame struct {
+	version 		int
 	frameType 		int
 	frameSubType 	int
+	time 		 	common.Time
 	chipId 			string
 	rssi			string
 	channel			int
-	receiverMAC		string
+	reciverMAC				string
 	senderMAC		string
 	ssid			string
 }
@@ -43,7 +46,7 @@ func New(b *beat.Beat, cfg *common.Config) (beat.Beater, error) {
 
 	bt := &Snifferbeat{
 		done:   make(chan struct{}),
-		lines:  make(chan string, 1000),
+		frames:  make(chan Frame, 30),
 		config: config,
 	}
 
@@ -52,7 +55,7 @@ func New(b *beat.Beat, cfg *common.Config) (beat.Beater, error) {
 
 func (bt *Snifferbeat) Run(b *beat.Beat) error {
 	logp.Info("SerialPool is running!")
-	go SerialPool(&bt.config.SerialConfig, bt.lines)
+	go SerialPool(&bt.config.SerialConfig, bt.frames)
 	logp.Info("snifferbeat is running! Hit CTRL-C to stop it.")
 
 	bt.client = b.Publisher.Connect()
@@ -63,12 +66,24 @@ func (bt *Snifferbeat) Run(b *beat.Beat) error {
 			return nil
 		case <-ticker.C:
 		}
-		
-		for line := range bt.lines {
-			event := common.MapStr{
-				"@timestamp": common.Time(time.Now()),
-				"type":       b.Name,
-				"msg": 		  line,
+		uniqeMap := map[string]Frame{}
+		for frame := range bt.frames {
+			uniqeMap[frame.senderMAC] = frame
+    	}
+    	for _,frame := range uniqeMap {
+    		fmt.Println("frame", frame.senderMAC)
+	    	event := common.MapStr{
+				"type"			: b.Name,
+				"version"		: frame.version,
+				"frameType"		: frame.frameType,
+				"frameSubType"	: frame.frameSubType,
+				"@timestamp"	: frame.time,
+				"chipId"		: frame.chipId,
+				"rssi"			: frame.rssi,
+				"channel"		: frame.channel,
+				"reciverMAC"	: frame.reciverMAC,
+				"senderMAC"		: frame.senderMAC,
+				"ssid"			: frame.ssid,
 			}
 			bt.client.PublishEvent(event)
 			logp.Info("Event sent")
@@ -79,18 +94,18 @@ func (bt *Snifferbeat) Run(b *beat.Beat) error {
 func (bt *Snifferbeat) Stop() {
 	bt.client.Close()
 	close(bt.done)
-	close(bt.lines)
+	close(bt.frames)
 }
 
 func is_Number(b byte) bool {
 	return b >= 48 && b <= 57
 }
 
-func is_Line(b []byte) bool {
+func is_Frame(b []byte) bool {
 	return is_Number(b[0]) && b[1] == 124
 }
 
-func SerialPool(config *serial.Config, lines chan string) error {
+func SerialPool(config *serial.Config, frames chan Frame) error {
 	serialPort, err := serial.OpenPort(config)
     if err != nil {
 		fmt.Println("Err:", err)
@@ -98,10 +113,37 @@ func SerialPool(config *serial.Config, lines chan string) error {
     }
     scanner := bufio.NewScanner(serialPort.File())
     for scanner.Scan() {
-    	if (is_Line(scanner.Bytes())) {
-    		logp.Info(scanner.Text())
-    		lines <- scanner.Text()
-    	}else{
+    	if(is_Frame(scanner.Bytes())){
+	    	tokens := strings.Split(scanner.Text(), "|")
+	    	version, err	:= strconv.Atoi(tokens[0])
+	    	if err != nil {
+	    		continue
+	    	}
+	    	frameType, err	:= strconv.Atoi(tokens[1])
+	    	if err != nil {
+	    		continue
+	    	}
+	    	frameSubType, err	:= strconv.Atoi(tokens[2])
+	    	if err != nil {
+	    		continue
+	    	}
+	    	channel, err	:= strconv.Atoi(tokens[6])
+	    	if err != nil {
+	    		channel = 0
+	    	}
+	    	frames <- Frame{
+	    		version:		version,
+				frameType:		frameType,
+				frameSubType:	frameSubType,
+				time:			common.Time(time.Now()),
+				chipId:			tokens[3],
+				rssi:			tokens[5],
+				channel:		channel,
+				reciverMAC:		tokens[7],
+				senderMAC:		tokens[8],
+				ssid:			tokens[9],
+	    	}
+    	} else {
     		fmt.Println(scanner.Text())
     	}
     }

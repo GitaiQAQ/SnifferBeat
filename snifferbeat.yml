@@ -52,8 +52,8 @@ fields:
 #   pretty: true
 
 output.file:
-  path: ./snfferbeat
-  name: snfferbeat.log
+  path: ./data
+  name: data.log
   keepfiles: 7
 
 #-------------------------- Elasticsearch output ------------------------------
