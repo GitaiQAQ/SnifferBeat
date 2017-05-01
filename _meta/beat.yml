@@ -1,0 +1,10 @@
+################### Snifferbeat Configuration Example #########################
+
+############################# Snifferbeat ######################################
+
+snifferbeat:
+  # Defines how often an event is sent to the output
+  period: 1s
+  serial:
+    name: /dev/ttyUSB1
+    baud_rate: 9600

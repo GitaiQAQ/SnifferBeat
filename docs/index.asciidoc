@@ -1,0 +1,5 @@
+= Snifferbeat Docs
+
+Welcome to the Snifferbeat documentation.
+
+

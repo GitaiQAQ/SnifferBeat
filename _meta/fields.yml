@@ -1,0 +1,9 @@
+- key: snifferbeat
+  title: snifferbeat
+  description:
+  fields:
+    - name: msg
+      type: string
+      required: true
+      description: >
+        PLEASE UPDATE DOCUMENTATION
