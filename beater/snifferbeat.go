@@ -6,7 +6,6 @@ import (
 	"bufio"
 	"strings"
 	"strconv"
-
 	"github.com/gitaiqaq/serial"
 
 	"github.com/elastic/beats/libbeat/beat"
@@ -19,22 +18,9 @@ import (
 
 type Snifferbeat struct {
 	done   chan struct{}
-	frames   chan Frame
+	frames   chan string
 	config config.Config
 	client publisher.Client
-}
-
-type Frame struct {
-	version 		int
-	frameType 		int
-	frameSubType 	int
-	time 		 	common.Time
-	chipId 			string
-	rssi			string
-	channel			int
-	reciverMAC				string
-	senderMAC		string
-	ssid			string
 }
 
 // Creates beater
@@ -46,7 +32,7 @@ func New(b *beat.Beat, cfg *common.Config) (beat.Beater, error) {
 
 	bt := &Snifferbeat{
 		done:   make(chan struct{}),
-		frames:  make(chan Frame, 30),
+		frames:  make(chan string),
 		config: config,
 	}
 
@@ -66,27 +52,43 @@ func (bt *Snifferbeat) Run(b *beat.Beat) error {
 			return nil
 		case <-ticker.C:
 		}
-		uniqeMap := map[string]Frame{}
-		for frame := range bt.frames {
-			uniqeMap[frame.senderMAC] = frame
-    	}
-    	for _,frame := range uniqeMap {
-    		fmt.Println("frame", frame.senderMAC)
+    	for frame := range bt.frames {
+    		tokens := strings.Split(frame, "|")
+	    	version, err	:= strconv.Atoi(tokens[0])
+	    	if err != nil {
+	    		continue
+	    	}
+	    	frameType, err	:= strconv.Atoi(tokens[1])
+	    	if err != nil {
+	    		continue
+	    	}
+	    	frameSubType, err	:= strconv.Atoi(tokens[2])
+	    	if err != nil {
+	    		continue
+	    	}
+	    	rssi, err	:= strconv.Atoi(tokens[5])
+	    	if err != nil {
+	    		continue
+	    	}
+	    	channel, err	:= strconv.Atoi(tokens[6])
+	    	if err != nil {
+	    		channel = 0
+	    	}
 	    	event := common.MapStr{
 				"type"			: b.Name,
-				"version"		: frame.version,
-				"frameType"		: frame.frameType,
-				"frameSubType"	: frame.frameSubType,
-				"@timestamp"	: frame.time,
-				"chipId"		: frame.chipId,
-				"rssi"			: frame.rssi,
-				"channel"		: frame.channel,
-				"reciverMAC"	: frame.reciverMAC,
-				"senderMAC"		: frame.senderMAC,
-				"ssid"			: frame.ssid,
+				"version"		: version,
+				"frameType"		: frameType,
+				"frameSubType"	: frameSubType,
+				"@timestamp"	: common.Time(time.Now()),
+				"chipId"		: tokens[4],
+				"rssi"			: rssi,
+				"channel"		: channel,
+				"senderMAC"		: tokens[7],
+				"reciverMAC"	: tokens[8],
+				"ssid"			: tokens[9],
 			}
 			bt.client.PublishEvent(event)
-			logp.Info("Event sent")
+			logp.Info("Sent data %v", frame)
     	}
 	}
 }
@@ -102,54 +104,29 @@ func is_Number(b byte) bool {
 }
 
 func is_Frame(b []byte) bool {
+	if (len(b) < 54) {
+		return false
+	}
 	return is_Number(b[0]) && b[1] == 124
 }
 
-func SerialPool(config *serial.Config, frames chan Frame) error {
+func SerialPool(config *serial.Config, frames chan string) error {
 	serialPort, err := serial.OpenPort(config)
     if err != nil {
-		fmt.Println("Err:", err)
+		logp.Err("Could not open port '%v'.", config.Name, err)
         return err
     }
     scanner := bufio.NewScanner(serialPort.File())
     for scanner.Scan() {
     	if(is_Frame(scanner.Bytes())){
-	    	tokens := strings.Split(scanner.Text(), "|")
-	    	version, err	:= strconv.Atoi(tokens[0])
-	    	if err != nil {
-	    		continue
-	    	}
-	    	frameType, err	:= strconv.Atoi(tokens[1])
-	    	if err != nil {
-	    		continue
-	    	}
-	    	frameSubType, err	:= strconv.Atoi(tokens[2])
-	    	if err != nil {
-	    		continue
-	    	}
-	    	channel, err	:= strconv.Atoi(tokens[6])
-	    	if err != nil {
-	    		channel = 0
-	    	}
-	    	frames <- Frame{
-	    		version:		version,
-				frameType:		frameType,
-				frameSubType:	frameSubType,
-				time:			common.Time(time.Now()),
-				chipId:			tokens[3],
-				rssi:			tokens[5],
-				channel:		channel,
-				reciverMAC:		tokens[7],
-				senderMAC:		tokens[8],
-				ssid:			tokens[9],
-	    	}
+	    	frames <- scanner.Text()
     	} else {
-    		fmt.Println(scanner.Text())
+    		logp.Err("Unknown format: ", scanner.Text())
     	}
     }
 
     if err := scanner.Err(); err != nil {
-       	logp.Err("Err:", err)
+		logp.Err("%v", err)
         return err
     }
     return nil
