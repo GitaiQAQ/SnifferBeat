@@ -2,15 +2,16 @@
 
 ############################# Lsbeat ######################################
 
-sniffer:
+snifferbeat:
   # Defines how often an event is sent to the output
   period: 1s
 
-  # Port, a number or a device name
-  port: /dev/ttyUSB0
+  serial:
+    # Port, a number or a device name
+    name: /dev/ttyUSB0
 
-  # Set baud rate, default=115200
-  baud_rate: 115200
+    # Set baud rate, default=115200
+    baud: 115200
 
 
 # Name
@@ -18,7 +19,7 @@ name: "Store-1"
 fields_under_root: true
 fields:
   # Addr and other mark
-  mark: "测试商铺1 xx省xx市xx大道xxx号"
+  mark: "Store No.0. descript"
 
   # Geopoint of this device
   location: 

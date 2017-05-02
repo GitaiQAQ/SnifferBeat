@@ -1,11 +1,67 @@
 # Snifferbeat
 
-Welcome to Snifferbeat.
+Transport and process your Iot device logs.
+
+More about Beats, See also [Beats Platform Reference](https://www.elastic.co/guide/en/beats/libbeat/current/index.html)
+
+## Quick Start
+
+
+```yml
+
+snifferbeat:
+  # Defines how often an event is sent to the output
+  period: 1s
+
+  serial:
+    # Port, a number or a device name
+    name: /dev/ttyUSB1
+
+    # Set baud rate, default=115200
+    baud: 952
+
+
+# Name
+name: "Store-1"
+fields_under_root: true
+fields:
+  # Addr and other mark
+  mark: "Store No.0. descript"
+
+  # Geopoint of this device
+  location: 
+    lat: -71.34
+    lon: 41.12
+
+  # ... more Custom fields
+```
+
+
+### Q&A
+
+```shell
+$ ./snifferbeat
+bash: ./snifferbeat: Permission denied
+```
+
+```
+$ chmod -R snifferbeat
+```
+
+```shell
+$ sudo ./snifferbeat
+snifferbeat2017/05/02 01:50:49.440981 beat.go:339: CRIT Exiting: error loading config file: config file ("snifferbeat.yml") must be owned by the beat user (uid=0) or root
+Exiting: error loading config file: config file ("snifferbeat.yml") must be owned by the beat user (uid=0) or root
+```
+
+```shell
+$ chmod go-w snifferbeat.yml
+```
+
+## Getting Started with Snifferbeat
 
 Ensure that this folder is at the following location:
 `${GOPATH}/github.com/gitaiqaq/snifferbeat`
-
-## Getting Started with Snifferbeat
 
 ### Requirements
 

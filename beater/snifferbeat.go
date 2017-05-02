@@ -30,6 +30,8 @@ func New(b *beat.Beat, cfg *common.Config) (beat.Beater, error) {
 		return nil, fmt.Errorf("Error reading config file: %v", err)
 	}
 
+	logp.Info("Config: %v", config)
+
 	bt := &Snifferbeat{
 		done:   make(chan struct{}),
 		frames:  make(chan string),
