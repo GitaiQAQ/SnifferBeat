@@ -48,22 +48,24 @@ before-build:
 collect:
 
 deploy:
+	mkdir -p ${GOPATH}/releases
+	
 	GOOS=windows GOARCH=386 go build -ldflags "-s -w"
-	tar -cvzf snifferbeat_windows_x86.tar.gz snifferbeat.exe snifferbeat.yml
+	tar -cvjf ${GOPATH}/releases/snifferbeat_windows_x86.tar.bzip2 snifferbeat.exe snifferbeat.yml
 
 	go clean
 
 	GOOS=windows GOARCH=amd64 go build -ldflags "-s -w"
-	tar -cvzf snifferbeat_windows_x64.tar.gz snifferbeat.exe snifferbeat.yml
+	tar -cvjf ${GOPATH}/releases/snifferbeat_windows_x64.tar.bzip2 snifferbeat.exe snifferbeat.yml
 
 	go clean
 
 	GOOS=linux GOARCH=386 go build -ldflags "-s -w"
-	tar -cvzf snifferbeat_linux_x86.tar.gz snifferbeat snifferbeat.yml
+	tar -cvjf ${GOPATH}/releases/snifferbeat_linux_x86.tar.bzip2 snifferbeat snifferbeat.yml
 
 	go clean
-	
+
 	GOOS=linux GOARCH=amd64 go build -ldflags "-s -w"
-	tar -cvzf snifferbeat_linux_x64.tar.gz snifferbeat snifferbeat.yml
+	tar -cvjf ${GOPATH}/releases/snifferbeat_linux_x64.tar.bzip2 snifferbeat snifferbeat.yml
 
 	go clean
