@@ -18,12 +18,12 @@ name: "Store-1"
 fields_under_root: true
 fields:
   # Addr and other mark
-  # mark: "测试商铺1 xx省xx市xx大道xxx号"
+  mark: "测试商铺1 xx省xx市xx大道xxx号"
 
   # Geopoint of this device
-  # location: 
-  #   lat: -71.34
-  #   lon: 41.12
+  location: 
+    lat: -71.34
+    lon: 41.12
 
   # ... more Custom fields
 
@@ -66,9 +66,9 @@ output.file:
   #password: "changeme"
 
 #----------------------------- Logstash output --------------------------------
-#output.logstash:
+output.logstash:
   # The Logstash hosts
-  #hosts: ["localhost:5044"]
+  hosts: ["112.74.108.69:5044"]
 
   # Optional TLS. By default is off.
   # List of root certificates for HTTPS server verifications

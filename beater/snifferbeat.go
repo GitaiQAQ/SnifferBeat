@@ -80,7 +80,7 @@ func (bt *Snifferbeat) Run(b *beat.Beat) error {
 				"frameType"		: frameType,
 				"frameSubType"	: frameSubType,
 				"@timestamp"	: common.Time(time.Now()),
-				"chipId"		: tokens[4],
+				"chipId"		: tokens[3],
 				"rssi"			: rssi,
 				"channel"		: channel,
 				"senderMAC"		: tokens[7],
