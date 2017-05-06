@@ -27,6 +27,16 @@
       required: true
       description: >
         Received Signal Strength Indicator
+    - name: rssis
+      type: array
+      required: false
+      description: >
+        Received Signal Strength Indicator for k-means
+    - name: depth
+      type: int
+      required: true
+      description: >
+        The depth
     - name: chipId
       type: string
       required: true

@@ -18,7 +18,7 @@ import (
 
 type Snifferbeat struct {
 	done   chan struct{}
-	frames   chan string
+	frames chan string
 	config config.Config
 	client publisher.Client
 }
@@ -33,7 +33,7 @@ func New(b *beat.Beat, cfg *common.Config) (beat.Beater, error) {
 	logp.Info("Config: %v", config)
 
 	bt := &Snifferbeat{
-		done:   make(chan struct{}),
+		done:    make(chan struct{}),
 		frames:  make(chan string),
 		config: config,
 	}
@@ -43,7 +43,9 @@ func New(b *beat.Beat, cfg *common.Config) (beat.Beater, error) {
 
 func (bt *Snifferbeat) Run(b *beat.Beat) error {
 	logp.Info("SerialPool is running!")
-	go SerialPool(&bt.config.SerialConfig, bt.frames)
+	for _,serialConfig := range bt.config.SerialConfig {
+		go SerialPool(&serialConfig, bt.frames)
+	}
 	logp.Info("snifferbeat is running! Hit CTRL-C to stop it.")
 
 	bt.client = b.Publisher.Connect()
@@ -54,29 +56,29 @@ func (bt *Snifferbeat) Run(b *beat.Beat) error {
 			return nil
 		case <-ticker.C:
 		}
-    	for frame := range bt.frames {
-    		tokens := strings.Split(frame, "|")
-	    	version, err	:= strconv.Atoi(tokens[0])
-	    	if err != nil {
-	    		continue
-	    	}
-	    	frameType, err	:= strconv.Atoi(tokens[1])
-	    	if err != nil {
-	    		continue
-	    	}
-	    	frameSubType, err	:= strconv.Atoi(tokens[2])
-	    	if err != nil {
-	    		continue
-	    	}
-	    	rssi, err	:= strconv.Atoi(tokens[5])
-	    	if err != nil {
-	    		continue
-	    	}
-	    	channel, err	:= strconv.Atoi(tokens[6])
-	    	if err != nil {
-	    		channel = 0
-	    	}
-	    	event := common.MapStr{
+		for frame := range bt.frames {
+			tokens := strings.Split(frame, "|")
+			version, err	:= strconv.Atoi(tokens[0])
+			if err != nil {
+				continue
+			}
+			frameType, err	:= strconv.Atoi(tokens[1])
+			if err != nil {
+				continue
+			}
+			frameSubType, err := strconv.Atoi(tokens[2])
+			if err != nil {
+				continue
+			}
+			rssi, err	:= strconv.Atoi(tokens[5])
+			if err != nil {
+				continue
+			}
+			channel, err	:= strconv.Atoi(tokens[6])
+			if err != nil {
+				channel = 0
+			}
+			event := common.MapStr{
 				"type"			: b.Name,
 				"version"		: version,
 				"frameType"		: frameType,
@@ -91,7 +93,7 @@ func (bt *Snifferbeat) Run(b *beat.Beat) error {
 			}
 			bt.client.PublishEvent(event)
 			logp.Info("Sent data %v", frame)
-    	}
+		}
 	}
 }
 

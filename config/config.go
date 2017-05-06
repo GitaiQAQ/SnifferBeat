@@ -9,14 +9,16 @@ import (
 )
 
 type Config struct {
-	Period		time.Duration 	`config:"period"`
-	SerialConfig serial.Config 	`config:"serial"`
+	Period			time.Duration 		`config:"period"`
+	SerialConfig 	[]serial.Config 	`config:"serials"`
 }
 
 var DefaultConfig = Config{
 	Period: 3 * time.Second,
-	SerialConfig: serial.Config{
-		Name: "/dev/ttyUSB0",
-		Baud: 115200,
+	SerialConfig: []serial.Config{
+		serial.Config{
+			Name: "/dev/ttyUSB0",
+			Baud: 115200,
+		},
 	},
 }

@@ -8,10 +8,14 @@ snifferbeat:
 
   serial:
     # Port, a number or a device name
-    name: /dev/ttyUSB0
-
-    # Set baud rate, default=115200
-    baud: 115200
+    - 
+      name: /dev/ttyUSB0
+      # Set baud rate, default=115200
+      baud: 115200
+    # - 
+      # name: /dev/ttyUSB1
+      # # Set baud rate, default=115200
+      # baud: 115200
 
 
 # Name
@@ -49,8 +53,8 @@ fields:
 # Configure what outputs to use when sending the data collected by the beat.
 # Multiple outputs may be used.
 
-# output.console:
-#   pretty: true
+output.console:
+  pretty: true
 
 output.file:
   path: ./data
@@ -67,9 +71,9 @@ output.file:
   #password: "changeme"
 
 #----------------------------- Logstash output --------------------------------
-output.logstash:
+# output.logstash:
   # The Logstash hosts
-  hosts: ["112.74.108.69:5044"]
+  # hosts: ["112.74.108.69:5044"]
 
   # Optional TLS. By default is off.
   # List of root certificates for HTTPS server verifications

@@ -4,7 +4,8 @@
 
 snifferbeat:
   # Defines how often an event is sent to the output
-  period: 1s
-  serial:
-    name: /dev/ttyUSB1
-    baud_rate: 9600
+  period: 3s
+  serials:
+    - 
+      name: /dev/ttyUSB0
+      baud_rate: 115200
