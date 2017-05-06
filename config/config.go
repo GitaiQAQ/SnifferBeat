@@ -5,12 +5,13 @@ package config
 
 import (
 	"time"
+
 	"github.com/gitaiqaq/serial"
 )
 
 type Config struct {
-	Period			time.Duration 		`config:"period"`
-	SerialConfig 	[]serial.Config 	`config:"serials"`
+	Period       time.Duration   `config:"period"`
+	SerialConfig []serial.Config `config:"serials"`
 }
 
 var DefaultConfig = Config{

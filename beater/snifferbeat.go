@@ -1,11 +1,12 @@
 package beater
 
 import (
-	"fmt"
-	"time"
 	"bufio"
-	"strings"
+	"fmt"
 	"strconv"
+	"strings"
+	"time"
+
 	"github.com/gitaiqaq/serial"
 
 	"github.com/elastic/beats/libbeat/beat"
@@ -33,8 +34,8 @@ func New(b *beat.Beat, cfg *common.Config) (beat.Beater, error) {
 	logp.Info("Config: %v", config)
 
 	bt := &Snifferbeat{
-		done:    make(chan struct{}),
-		frames:  make(chan string),
+		done:   make(chan struct{}),
+		frames: make(chan string, 1000),
 		config: config,
 	}
 
@@ -43,10 +44,10 @@ func New(b *beat.Beat, cfg *common.Config) (beat.Beater, error) {
 
 func (bt *Snifferbeat) Run(b *beat.Beat) error {
 	logp.Info("SerialPool is running!")
-	for _,serialConfig := range bt.config.SerialConfig {
+	for _, serialConfig := range bt.config.SerialConfig {
 		go SerialPool(&serialConfig, bt.frames)
 	}
-	logp.Info("snifferbeat is running! Hit CTRL-C to stop it.")
+	fmt.Println("Snifferbeat is running! Hit CTRL-C to stop it.")
 
 	bt.client = b.Publisher.Connect()
 	ticker := time.NewTicker(bt.config.Period)
@@ -56,13 +57,17 @@ func (bt *Snifferbeat) Run(b *beat.Beat) error {
 			return nil
 		case <-ticker.C:
 		}
-		for frame := range bt.frames {
+		len_of_frames := len(bt.frames)
+		fmt.Printf("Sync %v item(s) at %v\n", len_of_frames, common.Time(time.Now()))
+		for i := 0; i < len_of_frames; i++ {
+			frame :=<- bt.frames
+
 			tokens := strings.Split(frame, "|")
-			version, err	:= strconv.Atoi(tokens[0])
+			version, err := strconv.Atoi(tokens[0])
 			if err != nil {
 				continue
 			}
-			frameType, err	:= strconv.Atoi(tokens[1])
+			frameType, err := strconv.Atoi(tokens[1])
 			if err != nil {
 				continue
 			}
@@ -70,30 +75,30 @@ func (bt *Snifferbeat) Run(b *beat.Beat) error {
 			if err != nil {
 				continue
 			}
-			rssi, err	:= strconv.Atoi(tokens[5])
+			rssi, err := strconv.Atoi(tokens[5])
 			if err != nil {
 				continue
 			}
-			channel, err	:= strconv.Atoi(tokens[6])
+			channel, err := strconv.Atoi(tokens[6])
 			if err != nil {
 				channel = 0
 			}
-			event := common.MapStr{
-				"type"			: b.Name,
-				"version"		: version,
-				"frameType"		: frameType,
-				"frameSubType"	: frameSubType,
-				"@timestamp"	: common.Time(time.Now()),
-				"chipId"		: tokens[3],
-				"rssi"			: rssi,
-				"channel"		: channel,
-				"senderMAC"		: tokens[7],
-				"reciverMAC"	: tokens[8],
-				"ssid"			: tokens[9],
-			}
-			bt.client.PublishEvent(event)
-			logp.Info("Sent data %v", frame)
+			bt.client.PublishEvent(common.MapStr{
+				"type":         b.Name,
+				"version":      version,
+				"frameType":    frameType,
+				"frameSubType": frameSubType,
+				"@timestamp":   common.Time(time.Now()),
+				"chipId":       tokens[3],
+				"rssi":         rssi,
+				"channel":      channel,
+				"senderMAC":    tokens[7],
+				"reciverMAC":   tokens[8],
+				"ssid":         tokens[9],
+			})
+			logp.Info("Sent %v", frame)
 		}
+		fmt.Printf("Sync %v item(s) at %v SUCCESS!\n", len_of_frames, common.Time(time.Now()))
 	}
 }
 
@@ -108,7 +113,7 @@ func is_Number(b byte) bool {
 }
 
 func is_Frame(b []byte) bool {
-	if (len(b) < 54) {
+	if len(b) < 54 {
 		return false
 	}
 	return is_Number(b[0]) && b[1] == 124
@@ -116,22 +121,23 @@ func is_Frame(b []byte) bool {
 
 func SerialPool(config *serial.Config, frames chan string) error {
 	serialPort, err := serial.OpenPort(config)
-    if err != nil {
-		logp.Err("Could not open port '%v'.", config.Name, err)
-        return err
-    }
-    scanner := bufio.NewScanner(serialPort.File())
-    for scanner.Scan() {
-    	if(is_Frame(scanner.Bytes())){
-	    	frames <- scanner.Text()
-    	} else {
-    		logp.Err("Unknown format: ", scanner.Text())
-    	}
-    }
+	if err != nil {
+		fmt.Errorf("Could not open port '%v'.", config.Name)
+		logp.Err("Could not open port '%v'.", config.Name, err.Error())
+		return err
+	}
+	scanner := bufio.NewScanner(serialPort.File())
+	for scanner.Scan() {
+		if is_Frame(scanner.Bytes()) {
+			frames <- scanner.Text()
+		} else {
+			logp.Err("Unknown format: %v", scanner.Text())
+		}
+	}
 
-    if err := scanner.Err(); err != nil {
+	if err := scanner.Err(); err != nil {
 		logp.Err("%v", err)
-        return err
-    }
-    return nil
+		return err
+	}
+	return nil
 }
