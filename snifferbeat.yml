@@ -4,18 +4,18 @@
 
 snifferbeat:
   # Defines how often an event is sent to the output
-  period: 30s
+  period: 3s
 
-  serial:
+  serials:
     # Port, a number or a device name
     - 
       name: /dev/ttyUSB0
       # Set baud rate, default=115200
       baud: 115200
-    # - 
-      # name: /dev/ttyUSB1
-      # # Set baud rate, default=115200
-      # baud: 115200
+    - 
+      name: /dev/ttyUSB1
+      # Set baud rate, default=115200
+      baud: 115200
 
 
 # Name
@@ -71,9 +71,9 @@ output.file:
   #password: "changeme"
 
 #----------------------------- Logstash output --------------------------------
-output.logstash:
+# output.logstash:
   # The Logstash hosts
-  hosts: ["112.74.108.69:5044"]
+  # hosts: ["112.74.108.69:5044"]
 
   # Optional TLS. By default is off.
   # List of root certificates for HTTPS server verifications
@@ -84,7 +84,20 @@ output.logstash:
 
   # Client Certificate Key
   #tls.certificate_key: "/etc/pki/client/cert.key"
+#------------------------------ Apache Kafka ---------------------------------
+# https://www.elastic.co/guide/en/beats/filebeat/master/kafka-output.html
+# output.kafka:
+  # initial brokers for reading cluster metadata
+  # hosts: ["kafka1:9092", "kafka2:9092", "kafka3:9092"]
 
+  # message topic selection + partitioning
+  # topic: '%{[type]}'
+  # partition.round_robin:
+  #   reachable_only: false
+
+  # required_acks: 1
+  # compression: gzip
+  # max_message_bytes: 1000000
 #================================ Logging =====================================
 
 # Sets log level. The default log level is error.

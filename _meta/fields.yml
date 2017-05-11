@@ -22,6 +22,11 @@
       required: true
       description: >
         Channel (0)
+    - name: count
+      type: int
+      required: true
+      description: >
+        Count of devices
     - name: rssi
       type: int
       required: true
